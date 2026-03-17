@@ -1,3 +1,3 @@
 # AquadockCRM
-For internal Sales activities only.
+For internal Sales & Marketing activities only.
 Let's go bro.
