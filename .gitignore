@@ -1,0 +1,81 @@
+# Supabase
+supabase/migrations/
+*.bak
+
+# macOS junk
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node / Next.js
+node_modules/
+.env.local
+.env.*.local
+.next/
+out/
+dist/
+build/
+
+# PlatformIO
+.pio/
+*.elf
+*.bin
+secrets.h
+
+# Build artifacts / temp files (add if not already present)
+node_modules/
+.next/
+dist/
+build/
+*.log
+
+# Aider AI tool files (chat history, input logs, tags cache)
+.aider*
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v4
+
+.env*
+.vercel
+supabase/.branches
+node_modules
+.next
+dist
+
+# macOS junk
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Next.js / build artifacts
+.next/
+out/
+.vercel/
+
+# dependencies
+node_modules/
+.pnpm-store/
+pnpm-debug.log
+
+# environment & secrets
+.env*
+!.env.example
+
+# logs & temp
+*.log
+.cache/
+temp/
+
+# editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Supabase local dev
+supabase/.branches/
+supabase/migrations/*.sql~  # backups
+
+# certs / passwords (never commit!)
+certs/
+passwd/

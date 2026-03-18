@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaDock CRM v4.2</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-section">
+            <div class="logo">
+                <img src="/aquadock-logo.png" alt="AquaDock">
+            </div>
+            <div>
+                <div class="brand-name">AquaDock CRM</div>
+                <div class="brand-subtitle">Firmen & Kontakte — v4.2</div>
+            </div>
+            <div class="version-badge">v4.5</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+            <button class="btn btn-secondary" onclick="showNewContactModal()">
+                <i data-lucide="user-plus"></i>
+                Neuer Kontakt
+            </button>
+            <button class="btn btn-primary" onclick="showNewCompanyModal()">
+                <i data-lucide="plus"></i>
+                Neue Firma
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-card" onclick="switchTab('firmen')"
+             style="cursor:pointer; transition:box-shadow 0.2s;"
+             onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'"
+             onmouseleave="this.style.boxShadow=''">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">Firmen <span style="font-size:10px; opacity:0.6;">↗</span></div>
+        </div>
+        <div class="stat-card" onclick="switchTab('kontakte')"
+             style="cursor:pointer; transition:box-shadow 0.2s;"
+             onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'"
+             onmouseleave="this.style.boxShadow=''">
+            <div class="stat-value" id="stat-contacts">0</div>
+            <div class="stat-label">Kontakte <span style="font-size:10px; opacity:0.6;">↗</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-gewonnen">0</div>
+            <div class="stat-label">Gewonnen</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-value">€ 0</div>
+            <div class="stat-label">Gesamtwert</div>
+        </div>
+    </div>
+
+    <!-- Offene Aufgaben -->
+    <div class="global-reminders-section">
+        <div class="global-reminders-header">
+            <h3>🏆 Offene Aufgaben</h3>
+            <div class="reminder-counts-inline">
+                <span class="count-badge">
+                    <span class="count-number-inline" id="global-open-count">0</span>
+                    Offen
+                </span>
+                <span class="count-badge overdue">
+                    <span class="count-number-inline" id="global-overdue-count">0</span>
+                    Überfällig
+                </span>
+            </div>
+        </div>
+        <div id="globalRemindersContainer" class="global-reminders-grid"></div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div style="max-width:1400px; margin:0 auto; padding:0 24px; display:flex; gap:4px; border-bottom:2px solid var(--gray-200);">
+        <button id="tabFirmen" onclick="switchTab('firmen')"
+                style="padding:12px 20px; border:none; background:none; cursor:pointer;
+                       font-size:14px; font-weight:600; color:var(--primary);
+                       border-bottom:2px solid var(--primary); margin-bottom:-2px;
+                       display:flex; align-items:center; gap:8px;">
+            <i data-lucide="building-2" style="width:16px;height:16px;"></i> Firmen
+            <span id="tabFirmenCount" style="background:var(--primary); color:white;
+                  font-size:11px; padding:1px 7px; border-radius:10px;"></span>
+        </button>
+        <button id="tabKontakte" onclick="switchTab('kontakte')"
+                style="padding:12px 20px; border:none; background:none; cursor:pointer;
+                       font-size:14px; font-weight:600; color:var(--gray-500);
+                       border-bottom:2px solid transparent; margin-bottom:-2px;
+                       display:flex; align-items:center; gap:8px;">
+            <i data-lucide="users" style="width:16px;height:16px;"></i> Kontakte
+            <span id="tabKontakteCount" style="background:var(--gray-300); color:white;
+                  font-size:11px; padding:1px 7px; border-radius:10px;"></span>
+        </button>
+        <button id="tabVorlagen" onclick="switchTab('vorlagen')"
+                style="padding:12px 20px; border:none; background:none; cursor:pointer;
+                       font-size:14px; font-weight:600; color:var(--gray-500);
+                       border-bottom:2px solid transparent; margin-bottom:-2px;
+                       display:flex; align-items:center; gap:8px;">
+            <i data-lucide="mail" style="width:16px;height:16px;"></i> Vorlagen
+            <span id="tabVorlagenCount" style="background:var(--gray-300); color:white;
+                  font-size:11px; padding:1px 7px; border-radius:10px;"></span>
+        </button>
+        <button id="tabEinstellungen" onclick="switchTab('einstellungen')"
+                style="padding:12px 20px; border:none; background:none; cursor:pointer;
+                       font-size:14px; font-weight:600; color:var(--gray-500);
+                       border-bottom:2px solid transparent; margin-bottom:-2px;
+                       display:flex; align-items:center; gap:8px;">
+            <i data-lucide="settings" style="width:16px;height:16px;"></i> Einstellungen
+        </button>
+        <button id="tabMaillog" onclick="switchTab('maillog')"
+                style="padding:12px 20px; border:none; background:none; cursor:pointer;
+                       font-size:14px; font-weight:600; color:var(--gray-500);
+                       border-bottom:2px solid transparent; margin-bottom:-2px;
+                       display:flex; align-items:center; gap:8px;">
+            <i data-lucide="clock" style="width:16px;height:16px;"></i> Versandlog
+            <span id="tabMaillogCount" style="background:var(--gray-300); color:white;
+                  font-size:11px; padding:1px 7px; border-radius:10px;"></span>
+        </button>
+        <button id="tabKarte" onclick="switchTab('karte')"
+                style="padding:12px 20px; border:none; background:none; cursor:pointer;
+                       font-size:14px; font-weight:600; color:var(--gray-500);
+                       border-bottom:2px solid transparent; margin-bottom:-2px;
+                       display:flex; align-items:center; gap:8px;">
+            <i data-lucide="map" style="width:16px;height:16px;"></i> Karte
+            <span id="tabKarteCount" style="background:var(--gray-300); color:white;
+                  font-size:11px; padding:1px 7px; border-radius:10px;"></span>
+        </button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <input type="text" class="search-input" id="searchInput"
+               placeholder="🔍 Suche nach Firma, Name, Email, Stadt...">
+
+        <div class="filter-section">
+            <div class="filter-label">Status:</div>
+            <div class="filter-buttons" id="statusFilters"></div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-label">Kategorie:</div>
+            <div class="filter-buttons" id="typeFilters"></div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-label">Betriebstyp:</div>
+            <div class="filter-buttons" id="firmentypFilters"></div>
+        </div>
+
+        <div class="filter-section" id="landFilterSection" style="display:none;">
+            <div class="filter-label">Land:</div>
+            <div class="filter-buttons" id="landFilters"></div>
+        </div>
+
+        <div class="toolbar-actions">
+            <div id="bulkDeleteBar" style="display:none; align-items:center; gap:10px;
+                 background:#e0f2fe; border:1px solid #7dd3fc; border-radius:var(--radius-md);
+                 padding:6px 14px; font-size:14px; font-weight:600; color:#0369a1;">
+                <span id="bulkSelectedCount">0 ausgewählt</span>
+                <button class="btn btn-secondary btn-sm" onclick="selectAllCompanies()">
+                    <i data-lucide="check-square"></i>
+                    Alle markieren
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="showMassenmailFromSelection()" style="background:#0ea5e9; border-color:#0ea5e9;">
+                    <i data-lucide="send"></i>
+                    Massenmail senden
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="showBulkDeleteDialog()">
+                    <i data-lucide="trash-2"></i>
+                    Ausgewählte löschen
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="clearBulkSelection()">
+                    <i data-lucide="x"></i>
+                    Auswahl aufheben
+                </button>
+            </div>
+            <button class="btn btn-secondary" onclick="exportToCSV()">
+                <i data-lucide="download"></i>
+                CSV Export
+            </button>
+            <button class="btn btn-secondary" onclick="showImportModal()">
+                <i data-lucide="upload"></i>
+                CSV Import
+            </button>
+            <button class="btn btn-secondary" onclick="showOsmUpdateModal()" title="OSM-Links aus CSV in bestehende Firmen eintragen">
+                <i data-lucide="map-pin"></i>
+                OSM aktualisieren
+            </button>
+
+        </div>
+    </div>
+
+    <!-- Massenlöschen Dialog -->
+    <div class="modal" id="bulkDeleteModal">
+        <div class="modal-content" style="max-width:480px;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#dc2626,#b91c1c);">
+                <h2>🗑 Massenlöschen</h2>
+                <p id="bulkDeleteSubtitle">Firmen unwiderruflich löschen</p>
+            </div>
+            <div class="modal-body">
+                <div style="background:#fee2e2; border:1px solid #fca5a5; border-radius:var(--radius-md);
+                     padding:16px; margin-bottom:20px;">
+                    <strong>⚠️ Achtung:</strong> Diese Aktion kann nicht rückgängig gemacht werden!
+                    <div id="bulkDeleteSummary" style="margin-top:8px; font-size:14px;"></div>
+                </div>
+                <p style="font-weight:600; margin-bottom:12px;">Was soll mit den Kontakten passieren?</p>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;
+                           padding:12px; border:2px solid var(--gray-200); border-radius:var(--radius-md);"
+                           id="bulkOptionKeepLabel">
+                        <input type="radio" name="bulkContactOption" value="keep" checked
+                               onchange="updateBulkOption(this)"
+                               style="margin-top:2px; accent-color:var(--primary);">
+                        <div>
+                            <div style="font-weight:600;">Kontakte behalten</div>
+                            <div style="font-size:13px; color:var(--gray-500);">
+                                Kontakte bleiben erhalten, Firmenzuordnung wird aufgehoben
+                            </div>
+                        </div>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;
+                           padding:12px; border:2px solid var(--gray-200); border-radius:var(--radius-md);"
+                           id="bulkOptionDeleteLabel">
+                        <input type="radio" name="bulkContactOption" value="delete"
+                               onchange="updateBulkOption(this)"
+                               style="margin-top:2px; accent-color:#dc2626;">
+                        <div>
+                            <div style="font-weight:600; color:#dc2626;">Kontakte mitlöschen</div>
+                            <div style="font-size:13px; color:var(--gray-500);">
+                                Alle zugehörigen Kontakte werden ebenfalls gelöscht
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBulkDeleteModal()">
+                    <i data-lucide="x"></i> Abbrechen
+                </button>
+                <button class="btn btn-danger" onclick="executeBulkDelete()">
+                    <i data-lucide="trash-2"></i>
+                    <span id="bulkDeleteConfirmLabel">Jetzt löschen</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV Import Modal — Schritt 1: Datei wählen -->
+    <div class="modal" id="importModal">
+        <div class="modal-content" style="max-width:580px;">
+            <div class="modal-header">
+                <h2>📥 CSV Import</h2>
+                <p>Schritt 1 von 2 — Datei auswählen</p>
+            </div>
+            <div class="modal-body">
+                <div style="background:var(--gray-50); border:1px solid var(--gray-200);
+                     border-radius:var(--radius-md); padding:16px; margin-bottom:20px; font-size:14px;">
+                    <strong>📋 Pflichtfeld:</strong> Firmenname<br>
+                    <strong>📄 Trennzeichen:</strong> Semikolon (;) oder Komma (,)<br>
+                    <strong>🔤 Encoding:</strong> UTF-8
+                </div>
+                <div id="importDropzone" style="border:2px dashed var(--gray-300); border-radius:var(--radius-md);
+                     padding:40px; text-align:center; cursor:pointer; transition:all 0.2s;"
+                     onclick="document.getElementById('csvFile').click()"
+                     ondragover="event.preventDefault(); this.style.borderColor='var(--primary)'"
+                     ondragleave="this.style.borderColor='var(--gray-300)'"
+                     ondrop="handleImportDrop(event)">
+                    <div style="font-size:48px; margin-bottom:8px;">📄</div>
+                    <div style="font-weight:600; font-size:15px; margin-bottom:4px;">CSV-Datei auswählen</div>
+                    <div style="font-size:13px; color:var(--gray-500);">oder per Drag & Drop hierher ziehen</div>
+                    <input type="file" id="csvFile" accept=".csv" style="display:none"
+                           onchange="handleImportFileSelect(this)">
+                </div>
+                <div id="importFileName" style="margin-top:12px; font-size:13px;
+                     color:var(--gray-600); text-align:center;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="downloadCSVTemplate()">
+                    <i data-lucide="file-down"></i>
+                    Vorlage herunterladen
+                </button>
+                <div style="display:flex; gap:12px;">
+                    <button class="btn btn-secondary" onclick="closeImportModal()">
+                        <i data-lucide="x"></i>
+                        Abbrechen
+                    </button>
+                    <button class="btn btn-primary" id="importPreviewBtn" onclick="loadImportPreview()" disabled>
+                        <i data-lucide="eye"></i>
+                        Vorschau laden
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV Import Modal — Schritt 2: Vorschau & Duplikate -->
+    <div class="modal" id="importPreviewModal">
+        <div class="modal-content" style="max-width:900px;">
+            <div class="modal-header">
+                <h2>👁 Import-Vorschau</h2>
+                <p id="importPreviewSubtitle">Schritt 2 von 2 — Duplikate prüfen & importieren</p>
+            </div>
+            <div class="modal-body" style="padding:0;">
+
+                <!-- Zusammenfassung -->
+                <div id="importSummary" style="display:flex; gap:16px; padding:20px 24px;
+                     border-bottom:1px solid var(--gray-200); background:var(--gray-50);"></div>
+
+                <!-- Tabelle -->
+                <div style="overflow-x:auto; overflow-y:auto; max-height:400px; min-width:0;">
+                    <table style="width:100%; min-width:700px; border-collapse:collapse;">
+                        <thead style="position:sticky; top:0; background:var(--gray-50); z-index:1;">
+                            <tr>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">
+                                    <input type="checkbox" id="selectAllImport"
+                                           onchange="toggleAllImportRows(this.checked)"
+                                           style="width:16px; height:16px; cursor:pointer;">
+                                </th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Status</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Firmenname</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Kategorie</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Straße</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">PLZ</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Stadt</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Land</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Telefon</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">E-Mail</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Website</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Wassertyp</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">Distanz (m)</th>
+                                <th style="padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--gray-700); border-bottom:2px solid var(--gray-200); white-space:nowrap;">CRM Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="importPreviewBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeImportPreviewModal()">
+                    <i data-lucide="arrow-left"></i>
+                    Zurück
+                </button>
+                <div style="display:flex; gap:12px;">
+                    <button class="btn btn-secondary" onclick="closeImportModal(); closeImportPreviewModal();">
+                        <i data-lucide="x"></i>
+                        Abbrechen
+                    </button>
+                    <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmImport()">
+                        <i data-lucide="upload"></i>
+                        <span id="importConfirmLabel">Importieren</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firmen-Tabelle -->
+    <div id="viewFirmen">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40px; padding:12px 8px;">
+                        <input type="checkbox" id="selectAllCompanies"
+                               onchange="toggleAllCompanies(this.checked)"
+                               title="Alle auswählen"
+                               style="width:16px; height:16px; cursor:pointer; accent-color:var(--primary);">
+                    </th>
+                    <th>Firma</th>
+                    <th>Hauptkontakt</th>
+                    <th>Ort</th>
+                    <th>Typ</th>
+                    <th>Status</th>
+                    <th>Kontakte</th>
+                    <th>Aufgaben</th>
+                    <th>Wert (€)</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody id="companiesBody">
+                <tr>
+                    <td colspan="9" class="loading">
+                        <i data-lucide="loader" style="animation: spin 1s linear infinite;"></i>
+                        Lädt Firmen...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========== KONTAKTE TAB VIEW ========== -->
+<div id="viewKontakte" style="display:none;">
+    <div style="padding:16px 24px; border-bottom:1px solid var(--gray-100); display:flex; gap:12px; align-items:center; max-width:1400px; margin:0 auto; flex-wrap:wrap;">
+        <div class="input-wrapper" style="flex:1; max-width:400px;">
+            <i data-lucide="search" class="input-icon"></i>
+            <input type="text" class="form-input" id="contactSearchInput"
+                   placeholder="Name, Firma, E-Mail, Telefon..."
+                   oninput="filterContactsList(this.value)"
+                   style="padding-left:36px;">
+        </div>
+        <span id="contactsCountLabel" style="font-size:13px; color:var(--gray-500);"></span>
+
+        <!-- Kontakte Bulk-Bar -->
+        <div id="contactBulkBar" style="display:none; align-items:center; gap:10px;
+             background:#e0f2fe; border:1px solid #7dd3fc; border-radius:var(--radius-md);
+             padding:6px 14px; font-size:14px; font-weight:600; color:#0369a1; flex-wrap:wrap;">
+            <span id="contactBulkCount">0 ausgewählt</span>
+            <button class="btn btn-secondary btn-sm" onclick="selectAllContacts()">
+                <i data-lucide="check-square"></i> Alle markieren
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="showMassenmailFromContacts()" style="background:#0ea5e9; border-color:#0ea5e9;">
+                <i data-lucide="send"></i> Massenmail senden
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="bulkDeleteContacts()">
+                <i data-lucide="trash-2"></i> Ausgewählte löschen
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="clearContactSelection()">
+                <i data-lucide="x"></i> Auswahl aufheben
+            </button>
+        </div>
+    </div>
+    <div style="max-width:1400px; margin:0 auto; padding:0 24px 32px;">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40px;"></th>
+                        <th>Name</th>
+                        <th>Position</th>
+                        <th>Firma</th>
+                        <th>Telefon</th>
+                        <th>E-Mail</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody id="contactsListBody">
+                    <tr><td colspan="7" style="padding:24px; text-align:center; color:var(--gray-400);">Wird geladen...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ========== VORLAGEN TAB VIEW ========== -->
+<div id="viewVorlagen" style="display:none;">
+    <div style="max-width:1400px; margin:0 auto; padding:24px;">
+
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <div>
+                <h2 style="font-size:20px; font-weight:700; color:var(--gray-900); margin:0;">E-Mail Vorlagen</h2>
+                <p style="font-size:13px; color:var(--gray-500); margin:4px 0 0;">Wiederverwendbare Templates für den Massenversand</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="switchTab('maillog')">
+                    <i data-lucide="clock" style="width:16px;height:16px;"></i> Versandlog
+                </button>
+                <button class="btn btn-primary" onclick="showMassenmailModal()">
+                    <i data-lucide="send" style="width:16px;height:16px;"></i> Massenmail senden
+                </button>
+                <button class="btn btn-primary" onclick="showTemplateEditor()">
+                    <i data-lucide="plus" style="width:16px;height:16px;"></i> Neue Vorlage
+                </button>
+            </div>
+        </div>
+
+        <!-- Platzhalter Hinweis -->
+        <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius); padding:12px 16px; margin-bottom:20px; font-size:13px; color:#0369a1; line-height:2;">
+            <strong>Verfügbare Platzhalter:</strong>&nbsp;
+            <code style="font-family:monospace; background:#e0f2fe; padding:2px 8px; border-radius:4px; margin:0 3px; font-size:12px; color:#0369a1;">&#123;&#123;anrede&#125;&#125;</code>
+            <code style="font-family:monospace; background:#e0f2fe; padding:2px 8px; border-radius:4px; margin:0 3px; font-size:12px; color:#0369a1;">&#123;&#123;vorname&#125;&#125;</code>
+            <code style="font-family:monospace; background:#e0f2fe; padding:2px 8px; border-radius:4px; margin:0 3px; font-size:12px; color:#0369a1;">&#123;&#123;nachname&#125;&#125;</code>
+            <code style="font-family:monospace; background:#e0f2fe; padding:2px 8px; border-radius:4px; margin:0 3px; font-size:12px; color:#0369a1;">&#123;&#123;firmenname&#125;&#125;</code>
+            <code style="font-family:monospace; background:#e0f2fe; padding:2px 8px; border-radius:4px; margin:0 3px; font-size:12px; color:#0369a1;">&#123;&#123;stadt&#125;&#125;</code>
+            <code style="font-family:monospace; background:#e0f2fe; padding:2px 8px; border-radius:4px; margin:0 3px; font-size:12px; color:#0369a1;">&#123;&#123;land&#125;&#125;</code>
+        </div>
+
+        <!-- Template Liste -->
+        <div id="templatesList" style="display:grid; gap:16px;">
+            <div style="text-align:center; padding:48px; color:var(--gray-400);">Wird geladen...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== TEMPLATE EDITOR MODAL ========== -->
+<div class="modal" id="templateModal">
+    <div class="modal-content" style="max-width:720px; width:100%;">
+        <div class="modal-header">
+            <h2 id="templateModalTitle">Neue Vorlage</h2>
+            <button class="modal-close" onclick="closeTemplateModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group" style="margin-bottom:16px;">
+                <label class="form-label required">Vorlagenname</label>
+                <input type="text" class="form-input" id="tpl_name" placeholder="z.B. Erstansprache Camping">
+            </div>
+            <div class="form-group" style="margin-bottom:16px;">
+                <label class="form-label required">Betreff</label>
+                <input type="text" class="form-input" id="tpl_subject" placeholder="z.B. Anfrage bezüglich {{firmenname}}">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+                <label class="form-label required">Text</label>
+                <!-- Platzhalter Schnellauswahl -->
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                    <span style="font-size:11px; color:var(--gray-500); align-self:center; margin-right:2px;">Einfügen:</span>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertPlaceholder('tpl_body', this.dataset.val)" data-val="{{ '{{anrede}}' }}"     class="btn btn-sm btn-secondary" style="font-family:monospace; font-size:11px; padding:2px 8px;">&#123;&#123;anrede&#125;&#125;</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertPlaceholder('tpl_body', this.dataset.val)" data-val="{{ '{{vorname}}' }}"    class="btn btn-sm btn-secondary" style="font-family:monospace; font-size:11px; padding:2px 8px;">&#123;&#123;vorname&#125;&#125;</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertPlaceholder('tpl_body', this.dataset.val)" data-val="{{ '{{nachname}}' }}"   class="btn btn-sm btn-secondary" style="font-family:monospace; font-size:11px; padding:2px 8px;">&#123;&#123;nachname&#125;&#125;</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertPlaceholder('tpl_body', this.dataset.val)" data-val="{{ '{{firmenname}}' }}" class="btn btn-sm btn-secondary" style="font-family:monospace; font-size:11px; padding:2px 8px;">&#123;&#123;firmenname&#125;&#125;</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertPlaceholder('tpl_body', this.dataset.val)" data-val="{{ '{{stadt}}' }}"      class="btn btn-sm btn-secondary" style="font-family:monospace; font-size:11px; padding:2px 8px;">&#123;&#123;stadt&#125;&#125;</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertPlaceholder('tpl_body', this.dataset.val)" data-val="{{ '{{land}}' }}"       class="btn btn-sm btn-secondary" style="font-family:monospace; font-size:11px; padding:2px 8px;">&#123;&#123;land&#125;&#125;</button>
+                </div>
+                <textarea class="form-input" id="tpl_body" rows="12"
+                          style="font-family:monospace; font-size:13px; resize:vertical;"
+                          placeholder="Sehr geehrte/r {{anrede}} {{nachname}},&#10;&#10;..."></textarea>
+            </div>
+            <div style="font-size:12px; color:var(--gray-400); margin-bottom:16px;">
+                Platzhalter werden beim Versand automatisch pro Empfänger ersetzt.
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeTemplateModal()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="saveTemplate()">
+                <i data-lucide="save" style="width:15px;height:15px;"></i> Speichern
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== EINSTELLUNGEN TAB VIEW ========== -->
+<div id="viewEinstellungen" style="display:none;">
+    <div style="max-width:700px; margin:0 auto; padding:24px;">
+
+        <div style="margin-bottom:28px;">
+            <h2 style="font-size:20px; font-weight:700; color:var(--gray-900); margin:0;">Einstellungen</h2>
+            <p style="font-size:13px; color:var(--gray-500); margin:4px 0 0;">SMTP-Konfiguration für den E-Mail Versand</p>
+        </div>
+
+        <!-- SMTP Karte -->
+        <div style="background:white; border:1px solid var(--gray-200); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:20px;">
+            <div style="padding:16px 20px; background:var(--gray-50); border-bottom:1px solid var(--gray-200); display:flex; align-items:center; gap:12px;">
+                <div style="background:#e0f2fe; color:#0369a1; border-radius:var(--radius); padding:8px;">
+                    <i data-lucide="server" style="width:18px;height:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700; font-size:14px;">SMTP Server</div>
+                    <div style="font-size:12px; color:var(--gray-500);">z.B. All-Inkl, Gmail, Outlook</div>
+                </div>
+                <div id="smtpStatusBadge" style="margin-left:auto; font-size:12px; padding:3px 10px; border-radius:10px; background:var(--gray-100); color:var(--gray-500);">Nicht konfiguriert</div>
+            </div>
+            <div style="padding:20px; display:grid; gap:16px;">
+                <div style="display:grid; grid-template-columns:1fr 140px; gap:16px;">
+                    <div class="form-group">
+                        <label class="form-label required">SMTP Host</label>
+                        <input type="text" class="form-input" id="smtp_host" placeholder="mail.ihre-domain.de">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Port</label>
+                        <select class="form-select" id="smtp_port">
+                            <option value="587">587 (STARTTLS)</option>
+                            <option value="465">465 (SSL)</option>
+                            <option value="25">25 (Unsicher)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">Absender E-Mail</label>
+                    <input type="email" class="form-input" id="smtp_user" placeholder="info@ihre-domain.de">
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">Passwort</label>
+                    <div class="input-wrapper">
+                        <input type="password" class="form-input" id="smtp_password" placeholder="E-Mail Passwort" style="padding-right:40px;">
+                        <button type="button" onclick="toggleSmtpPassword()"
+                                style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                                       border:none; background:none; cursor:pointer; color:var(--gray-400); padding:4px;">
+                            <i data-lucide="eye" id="smtpPwEye" style="width:16px;height:16px;"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Absendername</label>
+                    <input type="text" class="form-input" id="smtp_name" placeholder="z.B. AquaDock Vertrieb">
+                </div>
+            </div>
+            <div style="padding:16px 20px; background:var(--gray-50); border-top:1px solid var(--gray-100); display:flex; gap:12px; justify-content:space-between; align-items:center;">
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="email" class="form-input" id="smtp_test_email" placeholder="Test-Mail an..." style="width:240px;">
+                    <button class="btn btn-secondary" onclick="sendTestMail()">
+                        <i data-lucide="send" style="width:14px;height:14px;"></i> Test senden
+                    </button>
+                </div>
+                <button class="btn btn-primary" onclick="saveSmtpSettings()">
+                    <i data-lucide="save" style="width:14px;height:14px;"></i> Speichern
+                </button>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:var(--radius); padding:14px 16px; font-size:13px; color:#166534;">
+            <strong>All-Inkl Tipp:</strong> Die SMTP-Zugangsdaten findest du im KAS unter
+            <em>E-Mail → Postfächer → SMTP</em>. Host ist meist <code>w0xxxxx.kasserver.com</code>.
+        </div>
+
+    </div>
+</div>
+
+<!-- ========== MASSENMAIL MODAL ========== -->
+<div class="modal" id="massenmailModal">
+    <div class="modal-content" style="max-width:700px; width:100%;">
+        <div class="modal-header">
+            <h2>Massenmail senden</h2>
+            <button class="modal-close" onclick="closeMassenmailModal()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body" style="display:grid; gap:20px;">
+
+            <!-- Vorlage wählen -->
+            <div class="form-group">
+                <label class="form-label required">Vorlage</label>
+                <select class="form-select" id="mm_template" onchange="updateMassenmailPreview()">
+                    <option value="">– Vorlage wählen –</option>
+                </select>
+            </div>
+
+            <!-- Empfänger -->
+            <div id="mm_mode_row">
+                <label class="form-label required">Empfänger</label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 14px; border:1px solid var(--gray-200); border-radius:var(--radius); font-size:13px;">
+                        <input type="radio" name="mm_recipients" value="all_contacts" onchange="updateRecipientCount()" checked>
+                        Alle Kontakte mit E-Mail
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 14px; border:1px solid var(--gray-200); border-radius:var(--radius); font-size:13px;">
+                        <input type="radio" name="mm_recipients" value="all_companies" onchange="updateRecipientCount()">
+                        Alle Firmen mit E-Mail
+                    </label>
+                </div>
+            </div>
+
+            <!-- Selektion-Info (nur bei Auswahl aus Firmen-Tab) -->
+            <div id="mm_selection_info" style="display:none; background:#f0f9ff; border:1px solid #bae6fd;
+                 border-radius:var(--radius); padding:12px 16px; font-size:13px; color:#0369a1;">
+                <i data-lucide="check-square" style="width:14px;height:14px; vertical-align:middle; margin-right:6px;"></i>
+                <strong><span id="mm_selection_count">0</span> Firmen</strong> aus aktueller Auswahl –
+                Empfänger ist jeweils der Hauptkontakt (fallback: Firmen-E-Mail)
+            </div>
+
+            <!-- Empfänger-Zähler + Liste (gemeinsam für beide Modi) -->
+            <div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div id="mm_recipient_count" style="font-size:13px; color:var(--gray-500);"></div>
+                    <button type="button" id="mm_toggle_list_btn" onclick="toggleRecipientList()"
+                            style="display:none; font-size:12px; color:var(--primary); background:none;
+                                   border:none; cursor:pointer; text-decoration:underline; padding:0;">
+                        Liste anzeigen
+                    </button>
+                </div>
+                <!-- Aufklappbare Empfängerliste -->
+                <div id="mm_recipient_list" style="display:none; margin-top:10px; max-height:200px;
+                     overflow-y:auto; border:1px solid var(--gray-200); border-radius:var(--radius);
+                     background:var(--gray-50);">
+                    <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                        <thead>
+                            <tr style="background:var(--gray-100); position:sticky; top:0;">
+                                <th style="padding:6px 12px; text-align:left; font-weight:600; color:var(--gray-600);">Name</th>
+                                <th style="padding:6px 12px; text-align:left; font-weight:600; color:var(--gray-600);">E-Mail</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mm_recipient_list_body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Vorschau -->
+            <div id="mm_preview_box" style="display:none;">
+                <label class="form-label">Vorschau (erster Empfänger)</label>
+                <div style="background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius); padding:14px; font-size:13px;">
+                    <div style="margin-bottom:6px;"><strong>Betreff:</strong> <span id="mm_preview_subject"></span></div>
+                    <hr style="border:none; border-top:1px solid var(--gray-200); margin:8px 0;">
+                    <pre id="mm_preview_body" style="white-space:pre-wrap; font-family:inherit; margin:0; font-size:12px; max-height:150px; overflow-y:auto;"></pre>
+                </div>
+            </div>
+
+            <!-- Verzögerung -->
+            <div class="form-group">
+                <label class="form-label">Verzögerung zwischen Mails</label>
+                <select class="form-select" id="mm_delay" style="max-width:200px;">
+                    <option value="1">1 Sekunde</option>
+                    <option value="2" selected>2 Sekunden</option>
+                    <option value="5">5 Sekunden</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between;">
+            <div id="mm_send_progress" style="font-size:13px; color:var(--gray-500);"></div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="closeMassenmailModal()">Abbrechen</button>
+                <button class="btn btn-primary" id="mm_send_btn" onclick="startMassenmail()">
+                    <i data-lucide="send" style="width:15px;height:15px;"></i> Jetzt senden
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== VERSANDLOG TAB ========== -->
+<div id="viewMaillog" style="display:none;">
+    <div style="max-width:1400px; margin:0 auto; padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <div>
+                <h2 style="font-size:20px; font-weight:700; margin:0;">Versandlog</h2>
+                <p style="font-size:13px; color:var(--gray-500); margin:4px 0 0;">Protokoll aller gesendeten Massenmails</p>
+            </div>
+            <button class="btn btn-secondary" onclick="loadMailLog()">
+                <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Aktualisieren
+            </button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Vorlage</th>
+                        <th>Empfänger</th>
+                        <th>Status</th>
+                        <th>Fehler</th>
+                    </tr>
+                </thead>
+                <tbody id="maillogBody">
+                    <tr><td colspan="5" style="padding:32px; text-align:center; color:var(--gray-400);">Wird geladen...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ========== KARTE TAB VIEW ========== -->
+<div id="viewKarte" style="display:none;">
+    <!-- Filterleiste -->
+    <div style="padding:12px 24px; border-bottom:1px solid var(--gray-100); display:flex; gap:12px; align-items:center; flex-wrap:wrap; max-width:1400px; margin:0 auto;">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span style="font-size:12px; font-weight:600; color:var(--gray-500);">FILTER:</span>
+            <select id="karteStatusFilter" onchange="refreshKarte()" class="form-select" style="height:32px; font-size:12px; padding:4px 10px; width:auto;">
+                <option value="">Alle Status</option>
+                <option value="neu">Neu</option>
+                <option value="interessant">Interessant</option>
+                <option value="lead">Lead</option>
+                <option value="qualifiziert">Qualifiziert</option>
+                <option value="akquise">Akquise</option>
+                <option value="angebot">Angebot</option>
+                <option value="gewonnen">Gewonnen</option>
+                <option value="kunde">Kunde</option>
+                <option value="partner">Partner</option>
+                <option value="inaktiv">Inaktiv</option>
+            </select>
+            <select id="karteKategorieFilter" onchange="refreshKarte()" class="form-select" style="height:32px; font-size:12px; padding:4px 10px; width:auto;">
+                <option value="">Alle Kategorien</option>
+                <option value="restaurant">🍽 Restaurant</option>
+                <option value="hotel">🏨 Hotel</option>
+                <option value="resort">🌴 Resort</option>
+                <option value="camping">⛺ Camping</option>
+                <option value="marina">⚓ Marina</option>
+                <option value="sonstige">Sonstige</option>
+            </select>
+            <select id="karteWassertypFilter" onchange="refreshKarte()" class="form-select" style="height:32px; font-size:12px; padding:4px 10px; width:auto;">
+                <option value="">Alle Gewässer</option>
+                <option value="Fluss">Fluss</option>
+                <option value="Badesee">Badesee</option>
+                <option value="See">See</option>
+                <option value="Küste / Meer">Küste / Meer</option>
+                <option value="Hafen">Hafen</option>
+                <option value="Bach">Bach</option>
+                <option value="Kanal">Kanal</option>
+            </select>
+            <select id="karteBatchFilter" onchange="refreshKarte()" class="form-select" style="height:32px; font-size:12px; padding:4px 10px; width:auto;">
+                <option value="">Alle Importe</option>
+            </select>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+            <span id="karteCountLabel" style="font-size:13px; color:var(--gray-500);"></span>
+            <button class="btn btn-secondary btn-sm" onclick="refreshKarte()">
+                <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Aktualisieren
+            </button>
+            <button id="osmToggleBtn" class="btn btn-secondary btn-sm" onclick="toggleOsmLayer()"
+                    style="border:2px solid var(--gray-300);">
+                ⚪ OSM-POIs anzeigen
+            </button>
+        </div>
+    </div>
+    <!-- Legende -->
+    <div style="padding:6px 24px; background:var(--gray-50); border-bottom:1px solid var(--gray-100); display:flex; gap:16px; align-items:center; font-size:12px; color:var(--gray-600); flex-wrap:wrap;">
+        <span style="font-weight:600;">LEGENDE:</span>
+        <span>🟠 Im CRM vorhanden</span>
+        <span>⚪ Neu in OSM (unbekannt)</span>
+        <span id="osmCountLabel" style="color:var(--gray-400);"></span>
+    </div>
+    <!-- Karte -->
+    <div id="karteContainer" style="height:calc(100vh - 220px); min-height:500px; position:relative;">
+        <div id="karteMap" style="height:100%; width:100%;"></div>
+        <div id="karteLoading" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+             background:white; padding:20px 30px; border-radius:var(--radius-lg); box-shadow:0 4px 20px rgba(0,0,0,0.15);
+             font-size:14px; color:var(--gray-600); display:flex; align-items:center; gap:10px;">
+            <i data-lucide="loader" style="width:18px;height:18px;"></i> Karte wird geladen...
+        </div>
+    </div>
+</div>
+
+<!-- ========== KONTAKT DETAIL MODAL ========== -->
+<div class="modal" id="contactDetailModal">
+    <div class="modal-content" style="max-width:560px; width:100%;">
+        <div class="modal-header" id="contactDetailHeader" style="background:var(--primary); color:white;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <div style="background:rgba(255,255,255,0.2); border-radius:50%; width:44px; height:44px;
+                            display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700;"
+                     id="contactDetailInitials">?</div>
+                <div>
+                    <h2 id="contactDetailName" style="margin:0; font-size:18px;">–</h2>
+                    <div id="contactDetailPosition" style="font-size:13px; opacity:0.85;"></div>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeContactDetail()" style="color:white; opacity:0.8;">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body" style="padding:0;">
+
+            <!-- Firma -->
+            <div id="contactDetailFirmaRow" style="display:none; padding:14px 20px; background:#f8fafc; border-bottom:1px solid var(--gray-100); display:flex; align-items:center; gap:10px;">
+                <i data-lucide="building-2" style="width:16px;height:16px; color:var(--gray-400); flex-shrink:0;"></i>
+                <a id="contactDetailFirmaLink" href="#" style="color:var(--primary); font-weight:600; text-decoration:none;"></a>
+            </div>
+
+            <!-- Kontaktdaten -->
+            <div style="padding:20px; display:grid; gap:14px;">
+                <div id="contactDetailEmailRow" style="display:none; align-items:center; gap:12px;">
+                    <i data-lucide="mail" style="width:16px;height:16px; color:var(--gray-400); flex-shrink:0;"></i>
+                    <a id="contactDetailEmail" href="#" style="color:var(--primary);"></a>
+                </div>
+                <div id="contactDetailTelRow" style="display:none; align-items:center; gap:12px;">
+                    <i data-lucide="phone" style="width:16px;height:16px; color:var(--gray-400); flex-shrink:0;"></i>
+                    <a id="contactDetailTel" href="#" style="color:var(--gray-800);"></a>
+                </div>
+                <div id="contactDetailMobilRow" style="display:none; align-items:center; gap:12px;">
+                    <i data-lucide="smartphone" style="width:16px;height:16px; color:var(--gray-400); flex-shrink:0;"></i>
+                    <a id="contactDetailMobil" href="#" style="color:var(--gray-800);"></a>
+                    <span style="font-size:11px; color:var(--gray-400);">Mobil</span>
+                </div>
+                <div id="contactDetailDurchwahl" style="display:none; align-items:center; gap:12px;">
+                    <i data-lucide="phone-forwarded" style="width:16px;height:16px; color:var(--gray-400); flex-shrink:0;"></i>
+                    <span id="contactDetailDurchwahlVal" style="color:var(--gray-800);"></span>
+                    <span style="font-size:11px; color:var(--gray-400);">Durchwahl</span>
+                </div>
+                <div id="contactDetailNotesRow" style="display:none;">
+                    <div style="display:flex; gap:12px; align-items:flex-start;">
+                        <i data-lucide="file-text" style="width:16px;height:16px; color:var(--gray-400); flex-shrink:0; margin-top:2px;"></i>
+                        <div id="contactDetailNotes" style="font-size:13px; color:var(--gray-700); white-space:pre-wrap;"></div>
+                    </div>
+                </div>
+                <!-- Keine Daten -->
+                <div id="contactDetailEmpty" style="display:none; text-align:center; padding:16px; color:var(--gray-400); font-size:13px;">
+                    Keine Kontaktdaten hinterlegt
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeContactDetail()">Schließen</button>
+            <button class="btn btn-primary" id="contactDetailEditBtn" onclick="">
+                <i data-lucide="edit-2" style="width:14px;height:14px;"></i> Kontakt bearbeiten
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== FIRMEN DETAIL MODAL ========== -->
+<div class="modal" id="detailModal">
+    <div class="detail-modal-enhanced">
+
+        <div class="detail-header-enhanced" id="detailHeader">
+            <div style="flex:1">
+                <h2 id="detailCompanyName">Firma</h2>
+                <p id="detailCompanyMeta" style="opacity:.9; font-size:14px;"></p>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <span id="detailStatusBadge" class="status-badge"></span>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,0.2); color:white;"
+                        onclick="editCurrentCompany()">
+                    <i data-lucide="edit-2"></i> Firma bearbeiten
+                </button>
+                <button class="btn-icon" style="color:white;" onclick="closeDetailView()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="detail-body-enhanced">
+
+            <!-- LINKS: Kontakte + Timeline -->
+            <div class="detail-main-enhanced">
+
+                <!-- Kontakte-Sektion -->
+                <div class="contacts-section">
+                    <div class="section-header-enhanced">
+                        <h3>👥 Ansprechpartner</h3>
+                        <button class="btn btn-sm btn-secondary" onclick="showAddContactModal()">
+                            <i data-lucide="user-plus"></i>
+                            Kontakt hinzufügen
+                        </button>
+                    </div>
+                    <div id="contactsContainer" class="contacts-grid"></div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="timeline-section-enhanced">
+                    <div class="section-header-enhanced">
+                        <h3>📋 Aktivitäts-Timeline</h3>
+                    </div>
+                    <div class="add-activity-form">
+                        <div class="form-row">
+                            <select class="form-select" id="activityType">
+                                <option value="note">📝 Notiz</option>
+                                <option value="call">📞 Telefonat</option>
+                                <option value="email">📧 Email</option>
+                                <option value="meeting">📅 Meeting</option>
+                            </select>
+                            <input type="text" class="form-input" id="activityTitle"
+                                   placeholder="z.B. Telefonat – Interesse an weiteren Standorten">
+                        </div>
+                        <textarea class="form-textarea" id="activityContent"
+                                  placeholder="Beschreibung (optional)" rows="2"></textarea>
+                        <button class="btn btn-primary btn-sm" onclick="addActivityFromForm()">
+                            <i data-lucide="plus"></i>
+                            Hinzufügen
+                        </button>
+                    </div>
+                    <div id="timelineContainer"></div>
+                </div>
+            </div>
+
+            <!-- RECHTS: Reminders -->
+            <div class="detail-sidebar-enhanced">
+                <div class="reminder-stats">
+                    <h3>🏆 Aufgaben & Reminder</h3>
+                    <div class="reminder-counts">
+                        <div class="count-item">
+                            <span class="count-number" id="reminderOpenCount">0</span>
+                            <span class="count-label">Offen</span>
+                        </div>
+                        <div class="count-divider"></div>
+                        <div class="count-item">
+                            <span class="count-number overdue" id="reminderOverdueCount">0</span>
+                            <span class="count-label">Überfällig</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%; margin-top:16px;"
+                            onclick="showAddReminderModal()">
+                        <i data-lucide="plus"></i>
+                        Neue Aufgabe
+                    </button>
+                </div>
+
+                <div id="remindersContainer"></div>
+
+                <!-- CRM Info -->
+                <div class="crm-info-card" id="detailCRMInfo"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ========== FIRMA ERSTELLEN / BEARBEITEN MODAL ========== -->
+<div class="modal" id="companyModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="companyModalTitle">Neue Firma</h2>
+            <p>Firmenstammdaten erfassen</p>
+        </div>
+
+        <form id="companyForm" onsubmit="handleCompanySubmit(event)">
+            <div class="modal-body">
+
+                <!-- Firmendaten -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i data-lucide="building-2"></i>
+                        </div>
+                        <div class="section-title">
+                            <h3>Firmendaten</h3>
+                            <p>Stammdaten der Firma</p>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Firmenname</label>
+                            <input type="text" class="form-input" id="c_firmenname" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rechtsform</label>
+                            <select class="form-select" id="c_rechtsform">
+                                <option value="">– Bitte wählen –</option>
+                                <option value="GmbH">GmbH</option>
+                                <option value="GmbH & Co. KG">GmbH & Co. KG</option>
+                                <option value="AG">AG</option>
+                                <option value="UG">UG (haftungsbeschränkt)</option>
+                                <option value="KG">KG</option>
+                                <option value="OHG">OHG</option>
+                                <option value="GbR">GbR</option>
+                                <option value="e.K.">e.K.</option>
+                                <option value="Einzelunternehmen">Einzelunternehmen</option>
+                                <option value="Verein">Verein (e.V.)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Kundentyp</label>
+                            <select class="form-select" id="c_kundentyp" required>
+                                <option value="">– Bitte wählen –</option>
+                                <option value="restaurant">🍽 Restaurant</option>
+                                <option value="hotel">🏨 Hotel</option>
+                                <option value="resort">🌴 Resort</option>
+                                <option value="camping">⛺ Camping</option>
+                                <option value="marina">⚓ Marina</option>
+                                <option value="segelschule">⛵ Segelschule</option>
+                                <option value="segelverein">🏆 Segelverein</option>
+                                <option value="bootsverleih">🚤 Bootsverleih</option>
+                                <option value="sonstige">Sonstige</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Firmentyp</label>
+                            <select class="form-select" id="c_firmentyp">
+                                <option value="">– Bitte wählen –</option>
+                                <option value="kette">Kette / Franchise</option>
+                                <option value="einzeln">Einzelbetrieb</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Website</label>
+                            <div class="input-wrapper">
+                                <i data-lucide="globe" class="input-icon"></i>
+                                <input type="url" class="form-input" id="c_website" placeholder="https://...">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Telefon (Firma)</label>
+                            <div class="input-wrapper">
+                                <i data-lucide="phone" class="input-icon"></i>
+                                <input type="tel" class="form-input" id="c_telefon" placeholder="+49 ...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">E-Mail (Firma)</label>
+                            <div class="input-wrapper">
+                                <i data-lucide="mail" class="input-icon"></i>
+                                <input type="email" class="form-input" id="c_email" placeholder="info@firma.de">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adresse -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon" style="background:#f0fdf4; color:#16a34a;">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="section-title">
+                            <h3>Adresse</h3>
+                            <p>Firmenanschrift</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Straße & Hausnummer</label>
+                        <input type="text" class="form-input" id="c_strasse">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">PLZ</label>
+                            <input type="text" class="form-input" id="c_plz" maxlength="10">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Stadt</label>
+                            <input type="text" class="form-input" id="c_stadt">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Bundesland</label>
+                            <input type="text" class="form-input" id="c_bundesland">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Land</label>
+                            <input type="text" class="form-input" id="c_land" value="Deutschland">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AquaDock Felder -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon" style="background:#e0f2fe; color:#0369a1;">
+                            <i data-lucide="waves"></i>
+                        </div>
+                        <div class="section-title">
+                            <h3>AquaDock Daten</h3>
+                            <p>Gewässer & Koordinaten</p>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Wasserdistanz (m)</label>
+                            <input type="number" class="form-input" id="c_wasserdistanz" min="0" placeholder="z.B. 50">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Wassertyp</label>
+                            <select class="form-select" id="c_wassertyp">
+                                <option value="">– Bitte wählen –</option>
+                                <option value="Fluss">🏞 Fluss</option>
+                                <option value="Badesee">🏊 Badesee</option>
+                                <option value="See">🌊 See</option>
+                                <option value="Küste / Meer">🌅 Küste / Meer</option>
+                                <option value="Hafen">⚓ Hafen</option>
+                                <option value="Bach">💧 Bach</option>
+                                <option value="Kanal">💧 Kanal</option>
+                                <option value="Teich">💧 Teich</option>
+                                <option value="Stausee">💧 Stausee</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Breitengrad (Lat)</label>
+                            <input type="number" class="form-input" id="c_lat" step="any" placeholder="z.B. 49.897">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Längengrad (Lon)</label>
+                            <input type="number" class="form-input" id="c_lon" step="any" placeholder="z.B. 8.654">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label class="form-label">OpenStreetMap Link</label>
+                            <div class="input-wrapper">
+                                <i data-lucide="map" class="input-icon"></i>
+                                <input type="url" class="form-input" id="c_osm"
+                                       placeholder="https://www.openstreetmap.org/node/..."
+                                       style="padding-left:36px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CRM -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon" style="background:#fef3e8; color:var(--accent-orange);">
+                            <i data-lucide="bar-chart-3"></i>
+                        </div>
+                        <div class="section-title">
+                            <h3>CRM Informationen</h3>
+                            <p>Status und Wert</p>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Status</label>
+                            <select class="form-select" id="c_status" required>
+                                <option value="neu">✨ Neu</option>
+                                <option value="interessant">⭐ Interessant</option>
+                                <option value="lead">Lead</option>
+                                <option value="qualifiziert">Qualifiziert</option>
+                                <option value="akquise">Akquise</option>
+                                <option value="angebot">Angebot</option>
+                                <option value="gewonnen">Gewonnen</option>
+                                <option value="verloren">Verloren</option>
+                                <option value="kunde">Kunde</option>
+                                <option value="partner">Partner</option>
+                                <option value="inaktiv">Inaktiv</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Wert (€)</label>
+                            <div class="input-wrapper">
+                                <i data-lucide="euro" class="input-icon"></i>
+                                <input type="number" class="form-input" id="c_value" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Notizen</label>
+                        <textarea class="form-textarea" id="c_notes" rows="4"
+                                  placeholder="Allgemeine Notizen zur Firma..."></textarea>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeCompanyModal()">
+                    <i data-lucide="x"></i> Abbrechen
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save"></i> Speichern
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ========== KONTAKT ERSTELLEN / BEARBEITEN MODAL ========== -->
+<div class="modal" id="contactModal">
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-header">
+            <h2 id="contactModalTitle">Kontakt hinzufügen</h2>
+            <p id="contactModalSubtitle">Ansprechpartner erfassen</p>
+        </div>
+
+        <form id="contactForm" onsubmit="handleContactSubmit(event)">
+            <div class="modal-body">
+
+                <div id="co_company_row" class="form-row">
+                    <div class="form-group full-width">
+                        <label class="form-label">Firma zuweisen <span style="color:var(--gray-400); font-weight:400;">(optional)</span></label>
+                        <!-- Autocomplete Widget -->
+                        <div style="position:relative;">
+                            <div class="input-wrapper">
+                                <i data-lucide="building-2" class="input-icon"></i>
+                                <input type="text" class="form-input" id="co_company_search"
+                                       placeholder="Firmenname suchen..."
+                                       oninput="companyAutocomplete(this.value)"
+                                       autocomplete="off"
+                                       style="padding-left:36px; padding-right:36px;">
+                                <button type="button" id="co_company_clear"
+                                        onclick="clearCompanySelection()"
+                                        style="display:none; position:absolute; right:10px; top:50%;
+                                               transform:translateY(-50%); border:none; background:none;
+                                               cursor:pointer; color:var(--gray-400); padding:4px;">
+                                    <i data-lucide="x" style="width:14px;height:14px;"></i>
+                                </button>
+                            </div>
+                            <!-- Hidden actual value -->
+                            <input type="hidden" id="co_company_id">
+                            <!-- Suggestions dropdown -->
+                            <div id="co_company_suggestions"
+                                 style="display:none; position:absolute; top:100%; left:0; right:0;
+                                        background:white; border:1px solid var(--gray-200); border-top:none;
+                                        border-radius:0 0 var(--radius) var(--radius);
+                                        box-shadow:0 4px 12px rgba(0,0,0,0.1);
+                                        max-height:220px; overflow-y:auto; z-index:1000;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="max-width:160px; flex:0 0 160px;">
+                        <label class="form-label">Anrede</label>
+                        <select class="form-select" id="co_anrede">
+                            <option value="">–</option>
+                            <option value="Hr.">Hr.</option>
+                            <option value="Fr.">Fr.</option>
+                            <option value="Dr.">Dr.</option>
+                            <option value="Prof.">Prof.</option>
+                            <option value="Prof. Dr.">Prof. Dr.</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Vorname</label>
+                        <input type="text" class="form-input" id="co_vorname" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Nachname</label>
+                        <input type="text" class="form-input" id="co_nachname" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Position</label>
+                        <input type="text" class="form-input" id="co_position" placeholder="z.B. Geschäftsführer">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="co_email">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Telefon</label>
+                        <input type="tel" class="form-input" id="co_telefon">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mobil</label>
+                        <input type="tel" class="form-input" id="co_mobil">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Durchwahl</label>
+                        <input type="text" class="form-input" id="co_durchwahl">
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:center; padding-top:28px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px;">
+                            <input type="checkbox" id="co_is_primary" style="width:18px; height:18px;">
+                            <span>Hauptkontakt</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Notizen</label>
+                    <textarea class="form-textarea" id="co_notes" rows="2"></textarea>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeContactModal()">
+                    <i data-lucide="x"></i> Abbrechen
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save"></i> Speichern
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ========== REMINDER MODAL ========== -->
+<div class="modal" id="addReminderModal">
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-header">
+            <h2>➕ Neue Aufgabe</h2>
+            <p>Reminder für diese Firma hinzufügen</p>
+        </div>
+
+        <form id="reminderForm" onsubmit="handleReminderSubmit(event)">
+            <div class="modal-body">
+                <div class="form-group full-width">
+                    <label class="form-label required">Titel</label>
+                    <input type="text" class="form-input" id="reminderTitle" required
+                           placeholder="z.B. Angebot nachfassen">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label required">Fälligkeitsdatum</label>
+                        <input type="date" class="form-input" id="reminderDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Priorität</label>
+                        <select class="form-select" id="reminderPriority">
+                            <option value="hoch">🔴 Hoch</option>
+                            <option value="normal" selected>🟡 Normal</option>
+                            <option value="niedrig">⚪ Niedrig</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Beschreibung</label>
+                    <textarea class="form-textarea" id="reminderDescription" rows="3"></textarea>
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Zugewiesen an</label>
+                    <input type="text" class="form-input" id="reminderAssignedTo" value="Ich">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeReminderModal()">
+                    <i data-lucide="x"></i> Abbrechen
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="check"></i> Erstellen
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ========== LÖSCHEN-DIALOG (Firma) ========== -->
+<div class="modal" id="deleteCompanyModal">
+    <div class="modal-content" style="max-width:480px;">
+        <div class="modal-header" style="background:var(--danger);">
+            <h2>⚠️ Firma löschen</h2>
+            <p id="deleteCompanyName">Firma</p>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom:20px; color:var(--gray-700);">
+                Was soll mit den Kontakten dieser Firma passieren?
+            </p>
+            <div id="deleteContactCount" style="background:var(--gray-50); border:1px solid var(--gray-200);
+                 border-radius:var(--radius-md); padding:16px; margin-bottom:20px; font-size:14px;
+                 color:var(--gray-700);">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer;
+                       padding:16px; border:2px solid var(--gray-200); border-radius:var(--radius-md);
+                       transition:border-color .2s;" id="optionKeep"
+                       onclick="selectDeleteOption('keep')">
+                    <input type="radio" name="deleteOption" value="keep" checked style="margin-top:3px;">
+                    <div>
+                        <strong>Kontakte behalten</strong><br>
+                        <small style="color:var(--gray-500);">
+                            Kontakte bleiben im System, werden aber keiner Firma zugeordnet
+                        </small>
+                    </div>
+                </label>
+                <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer;
+                       padding:16px; border:2px solid var(--gray-200); border-radius:var(--radius-md);
+                       transition:border-color .2s;" id="optionDelete"
+                       onclick="selectDeleteOption('delete')">
+                    <input type="radio" name="deleteOption" value="delete" style="margin-top:3px;">
+                    <div>
+                        <strong style="color:var(--danger);">Kontakte mitlöschen</strong><br>
+                        <small style="color:var(--gray-500);">
+                            Alle Kontakte dieser Firma werden unwiderruflich gelöscht
+                        </small>
+                    </div>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDeleteCompanyModal()">
+                <i data-lucide="x"></i> Abbrechen
+            </button>
+            <button class="btn btn-danger" onclick="confirmDeleteCompany()">
+                <i data-lucide="trash-2"></i> Firma löschen
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script src="/date-helper.js?v=4.5"></script>
+<script src="/toast.js?v=4.5"></script>
+<script src="/app.js?v=4.5"></script>
+<script>
+    lucide.createIcons();
+    const style = document.createElement('style');
+    style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
+</script>
+</body>
+</html>
